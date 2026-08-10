@@ -26,8 +26,17 @@ class MiniLMEmbeddingModel(EmbeddingModel):
                 Embedding(
                     chunk_id=chunk.chunk_id,
                     vector=vector.tolist(),
-                    metadata=chunk.metadata.copy(),
+                    metadata={
+                        **chunk.metadata.copy(),
+                        "text": chunk.text,
+                        "start_index": chunk.start_index,
+                        "end_index": chunk.end_index,
+                    },
                 )
             )
 
         return embeddings
+
+    def embed_query(self, query: str) -> list[float]:
+
+        return self.model.encode([query])[0].tolist()

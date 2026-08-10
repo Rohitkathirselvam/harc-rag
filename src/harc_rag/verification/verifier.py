@@ -4,9 +4,16 @@ from harc_rag.verification.models import VerificationResult
 
 class LocalVerifier:
 
-    def __init__(self):
+    def __init__(
+        self,
+        model: str = "qwen2.5:3b",
+        host: str = "http://127.0.0.1:11434",
+    ):
 
-        self.llm = OllamaClient()
+        self.llm = OllamaClient(
+            model=model,
+            host=host,
+        )
 
     def verify(
         self,

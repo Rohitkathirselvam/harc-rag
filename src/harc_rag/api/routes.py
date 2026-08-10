@@ -10,6 +10,7 @@ from fastapi import (
 from harc_rag.api.models import (
     ChatRequest,
     ChatResponse,
+    SourceChunk,
 )
 
 
@@ -68,12 +69,30 @@ def chat(
             detail="HARC-RAG pipeline is not initialized",
         )
 
-    answer = _pipeline.answer(
-        request.question
-    )
+    if not hasattr(_pipeline, "answer_with_metadata"):
+        return ChatResponse(
+            answer=_pipeline.answer(request.question)
+        )
+
+    result = _pipeline.answer_with_metadata(request.question)
 
     return ChatResponse(
-        answer=answer
+        answer=result.answer,
+        confidence=result.confidence,
+        retrieval_confidence=result.retrieval_confidence,
+        generation_confidence=result.generation_confidence,
+        evidence_confidence=result.evidence_confidence,
+        verified=result.verified,
+        verification_reason=result.verification_reason,
+        retrieved_chunks=result.retrieved_chunks,
+        sources=[
+            SourceChunk(
+                source=source.source,
+                text=source.text,
+                score=source.score,
+            )
+            for source in result.sources
+        ],
     )
 
 

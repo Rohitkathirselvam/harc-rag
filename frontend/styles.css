@@ -1,0 +1,263 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #17202a;
+  --muted: #657382;
+  --line: #d9e0e7;
+  --accent: #0f766e;
+  --accent-dark: #115e59;
+  --warning: #a16207;
+  --danger: #b42318;
+  --ok: #15803d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  color: var(--ink);
+  background: var(--bg);
+  font-family: Inter, Segoe UI, Arial, sans-serif;
+}
+
+.sidebar {
+  min-height: 100vh;
+  padding: 24px;
+  border-right: 1px solid var(--line);
+  background: #eef3f2;
+}
+
+.brand h1,
+.chat-header h2,
+.empty-state h3 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.brand h1 {
+  font-size: 28px;
+}
+
+.brand p,
+.chat-header p,
+.empty-state p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.primary-button,
+.upload-button,
+.composer button {
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  color: white;
+  background: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-button,
+.upload-button {
+  display: block;
+  margin-top: 24px;
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.primary-button:hover,
+.upload-button:hover,
+.composer button:hover {
+  background: var(--accent-dark);
+}
+
+.upload-button input {
+  display: none;
+}
+
+.panel {
+  margin-top: 28px;
+}
+
+.panel-title {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.status span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.status.connected span {
+  background: var(--ok);
+}
+
+.upload-message {
+  min-height: 22px;
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.upload-message.error {
+  color: var(--danger);
+}
+
+.document-list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.document-list li {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.chat-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.chat-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.messages {
+  padding: 24px 32px;
+  overflow: auto;
+}
+
+.empty-state {
+  max-width: 560px;
+  padding-top: 12vh;
+}
+
+.message {
+  max-width: 900px;
+  margin-bottom: 18px;
+}
+
+.role {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.bubble {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.user .bubble {
+  border-color: #b8d8d4;
+  background: #f0fbf9;
+}
+
+.metadata {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.metric {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fbfcfd;
+}
+
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sources {
+  margin-top: 12px;
+}
+
+.source {
+  margin-top: 8px;
+  padding: 12px;
+  border-left: 3px solid var(--accent);
+  background: #f9fbfb;
+  line-height: 1.45;
+}
+
+.source-title {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.composer {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  gap: 12px;
+  padding: 18px 32px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.composer input,
+.composer button {
+  min-height: 46px;
+  font: inherit;
+}
+
+.composer input {
+  width: 100%;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+@media (max-width: 760px) {
+  body {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .composer {
+    grid-template-columns: 1fr;
+  }
+}

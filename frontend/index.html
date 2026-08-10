@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HARC-RAG</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>HARC-RAG</h1>
+        <p>Hallucination-Aware RAG System</p>
+      </div>
+
+      <button id="new-chat" class="primary-button">+ New Chat</button>
+
+      <section class="panel">
+        <div class="panel-title">Backend</div>
+        <div id="backend-status" class="status unavailable">
+          <span></span>
+          Backend unavailable
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Documents</div>
+        <label class="upload-button">
+          Upload PDF
+          <input id="pdf-upload" type="file" accept="application/pdf" />
+        </label>
+        <div id="upload-message" class="upload-message"></div>
+        <ul id="document-list" class="document-list"></ul>
+      </section>
+    </aside>
+
+    <main class="chat-shell">
+      <header class="chat-header">
+        <div>
+          <h2>HARC-RAG Assistant</h2>
+          <p>Retrieval, confidence, verification, and sources are shown with each answer.</p>
+        </div>
+      </header>
+
+      <section id="messages" class="messages">
+        <article class="empty-state">
+          <h3>Ask a question after indexing a PDF.</h3>
+          <p>The answer will come from the local HARC-RAG pipeline and Ollama.</p>
+        </article>
+      </section>
+
+      <form id="chat-form" class="composer">
+        <input
+          id="question-input"
+          type="text"
+          autocomplete="off"
+          placeholder="Ask HARC-RAG something..."
+        />
+        <button type="submit">Send</button>
+      </form>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

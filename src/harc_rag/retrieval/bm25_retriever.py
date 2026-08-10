@@ -9,19 +9,34 @@ class BM25Retriever:
     def __init__(self, chunks: list[Chunk]):
 
         self.chunks = chunks
+        self._rebuild()
+
+    def _rebuild(self):
 
         self.corpus = [
             chunk.text.split()
-            for chunk in chunks
+            for chunk in self.chunks
         ]
 
-        self.bm25 = BM25Okapi(self.corpus)
+        self.bm25 = (
+            BM25Okapi(self.corpus)
+            if self.corpus
+            else None
+        )
+
+    def add(self, chunks: list[Chunk]) -> None:
+
+        self.chunks.extend(chunks)
+        self._rebuild()
 
     def retrieve(
         self,
         query: str,
         k: int = 5,
     ) -> list[RetrievalResult]:
+
+        if self.bm25 is None:
+            return []
 
         query_tokens = query.split()
 

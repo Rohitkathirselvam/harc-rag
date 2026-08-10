@@ -29,18 +29,10 @@ class DocumentIndexingService:
         chunks = self.splitter.split(document)
 
         # Generate embeddings
-        texts = [
-            chunk.text
-            for chunk in chunks
-        ]
-
-        embeddings = self.embedding_model.encode(
-            texts
-        )
+        embeddings = self.embedding_model.embed(chunks)
 
         # Add chunks to vector store
         self.vector_store.add(
-            chunks,
             embeddings,
         )
 

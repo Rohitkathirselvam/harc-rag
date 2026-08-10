@@ -35,8 +35,14 @@ class AdaptiveRouter:
                     reason="Low confidence and affordable verification",
                 )
 
+            return RoutingDecision(
+                should_verify=False,
+                confidence=confidence,
+                reason="Low confidence, but verification was skipped because the retrieved context is too large",
+            )
+
         return RoutingDecision(
             should_verify=False,
             confidence=confidence,
-            reason="High verification cost or sufficient confidence",
+            reason="Sufficient confidence; verification was not required",
         )       
