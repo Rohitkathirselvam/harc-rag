@@ -96,6 +96,14 @@ class HARCRAGPipeline:
         # Generate answer
         answer = self.generator.generate(prompt)
 
+        used_general_fallback = self._needs_general_fallback(answer)
+
+        if used_general_fallback:
+            fallback_prompt = self.prompt_builder.build_general(
+                query=question,
+            )
+            answer = self.generator.generate(fallback_prompt)
+
         # Estimate uncertainty
         uncertainty = self.estimator.estimate(
             retrieval_results,
@@ -115,7 +123,13 @@ class HARCRAGPipeline:
         verification_reason = decision.reason
         final_answer = answer
 
-        if decision.should_verify:
+        if used_general_fallback:
+            verification_reason = (
+                "The uploaded documents did not contain enough information, "
+                "so the answer was generated from the LLM's general knowledge."
+            )
+
+        elif decision.should_verify:
 
             verification = self.verifier.verify(
                 question,
@@ -143,4 +157,14 @@ class HARCRAGPipeline:
                 )
                 for result in retrieval_results
             ],
+        )
+
+    def _needs_general_fallback(
+        self,
+        answer: str,
+    ) -> bool:
+
+        return (
+            self.prompt_builder.INSUFFICIENT_CONTEXT_ANSWER.lower()
+            in answer.lower()
         )
