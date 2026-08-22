@@ -2,35 +2,38 @@ class GenerationConfidenceEstimator:
 
     UNCERTAIN_PHRASES = [
         "i don't know",
+        "i do not know",
         "not sure",
         "possibly",
         "maybe",
         "might",
         "could be",
         "cannot determine",
+        "can't determine",
         "insufficient information",
+        "not enough information",
+        "unable to determine",
+        "unclear",
     ]
 
-    def estimate(
-        self,
-        answer: str,
-    ) -> float:
+    def estimate(self, answer: str) -> float:
 
-        if not answer.strip():
+        if not answer or not answer.strip():
             return 0.0
 
-        answer_lower = answer.lower()
+        answer_lower = answer.lower().strip()
 
-        confidence = 1.0
+        uncertainty_count = sum(
+            1
+            for phrase in self.UNCERTAIN_PHRASES
+            if phrase in answer_lower
+        )
 
-        for phrase in self.UNCERTAIN_PHRASES:
+        confidence = 1.0 - (
+            0.15 * uncertainty_count
+        )
 
-            if phrase in answer_lower:
-                confidence -= 0.15
-
-        confidence = max(
+        return max(
             0.0,
             min(confidence, 1.0),
         )
-
-        return confidence

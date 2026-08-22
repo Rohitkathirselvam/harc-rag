@@ -1,6 +1,7 @@
 from harc_rag.pipeline.pipeline import HARCRAGPipeline
 from harc_rag.chunking.models import Chunk
 from harc_rag.retrieval.models import RetrievalResult
+from harc_rag.verification.models import VerificationResult
 
 
 class FakeRetriever:
@@ -67,3 +68,82 @@ def test_pipeline_falls_back_to_general_llm_when_context_is_insufficient():
     assert len(llm.prompts) == 2
     assert "general knowledge" in llm.prompts[1]
     assert "general knowledge" in result.verification_reason
+
+
+class LowConfidenceRetriever:
+
+    def retrieve(
+        self,
+        query,
+        k=5,
+    ):
+
+        return [
+
+            RetrievalResult(
+
+                chunk=Chunk(
+                    chunk_id=1,
+                    text="TCP uses a three-way handshake.",
+                    start_index=0,
+                    end_index=40,
+                    metadata={},
+                ),
+
+                score=0.1,
+            )
+
+        ]
+
+
+class VerificationFakeVerifier:
+
+    def __init__(self):
+        self.called = False
+
+    def verify(
+        self,
+        question,
+        answer,
+        context,
+    ):
+
+        self.called = True
+
+        return VerificationResult(
+            original_answer=answer,
+            verified_answer="TCP uses a three-way handshake.",
+            is_verified=False,
+            confidence=0.5,
+        )
+
+
+class VerificationLLM:
+
+    def generate(self, prompt):
+
+        return "TCP uses a four-way handshake."
+
+
+def test_pipeline_verifies_low_confidence_answer():
+
+    pipeline = HARCRAGPipeline(
+        LowConfidenceRetriever(),
+        llm=VerificationLLM(),
+    )
+
+    verifier = VerificationFakeVerifier()
+
+    pipeline.verifier = verifier
+
+    result = pipeline.answer_with_metadata(
+        "How does TCP connect?"
+    )
+
+    assert verifier.called is True
+
+    assert result.answer == (
+        "TCP uses a three-way handshake."
+    )
+
+    assert result.verified is False

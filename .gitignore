@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Pytest
+.pytest_cache/
+
+# Virtual environment
+.venv/
+
+# Uploaded documents
+data/uploads/
+
+# Environment files
+.env
+.env.*
+
+# VS Code
+.vscode/

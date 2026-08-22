@@ -72,3 +72,49 @@ def test_rrf_scores_are_normalized_for_confidence():
     confidence = estimator.estimate(results)
 
     assert confidence > 0.95
+
+
+def test_rrf_confidence_decreases_when_only_one_chunk_has_fusion_support():
+
+    estimator = RetrievalConfidenceEstimator()
+
+    results = [
+
+        RetrievalResult(
+            chunk=Chunk(
+                chunk_id=1,
+                text="TCP uses a three-way handshake.",
+                start_index=0,
+                end_index=40,
+                metadata={},
+            ),
+            score=(1 / 61) + (1 / 61),
+        ),
+
+        RetrievalResult(
+            chunk=Chunk(
+                chunk_id=2,
+                text="TCP is connection oriented.",
+                start_index=41,
+                end_index=70,
+                metadata={},
+            ),
+            score=1 / 62,
+        ),
+
+        RetrievalResult(
+            chunk=Chunk(
+                chunk_id=3,
+                text="TCP provides reliable delivery.",
+                start_index=71,
+                end_index=105,
+                metadata={},
+            ),
+            score=1 / 63,
+        ),
+    ]
+
+    confidence = estimator.estimate(results)
+
+    assert 0.0 <= confidence <= 1.0
+    assert confidence < 0.90

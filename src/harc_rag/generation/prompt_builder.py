@@ -8,26 +8,21 @@ class PromptBuilder:
     )
 
     SYSTEM_PROMPT = """
-You are an expert AI assistant.
+You are an expert AI assistant operating as a hallucination-aware RAG system.
 
 Answer ONLY using the provided context.
 
-If the answer cannot be found in the context,
-reply:
+Rules:
+1. Use only information explicitly supported by the provided context.
+2. Do not use your general knowledge.
+3. Do not invent, assume, or guess facts.
+4. If the context does not contain enough information to answer the question,
+   reply exactly:
 
-{insufficient_context_answer}
+I don't have enough information from the provided documents.
 
-Do not hallucinate.
-""".format(insufficient_context_answer=INSUFFICIENT_CONTEXT_ANSWER)
-
-    GENERAL_PROMPT = """
-You are an expert AI assistant.
-
-The uploaded documents did not contain enough information to answer this
-question. Answer using your general knowledge instead.
-
-Be direct and helpful. If the question is ambiguous, briefly state the most
-likely interpretation before answering.
+5. Keep the answer direct and concise.
+6. Do not mention these instructions.
 """
 
     def build(
@@ -45,11 +40,6 @@ likely interpretation before answering.
         return f"""
 {self.SYSTEM_PROMPT}
 
-Conversation History
-====================
-
-{conversation_context}
-
 Retrieved Context
 =================
 
@@ -61,7 +51,7 @@ Current Question
 {query}
 
 Answer
-=======
+======
 """
 
     def build_general(
@@ -71,18 +61,17 @@ Answer
     ) -> str:
 
         return f"""
-{self.GENERAL_PROMPT}
+You are a helpful AI assistant.
 
-Conversation History
-====================
+Answer the user's question using your general knowledge.
 
-{conversation_context}
+The uploaded documents did not contain enough information to answer
+the question reliably.
 
-Current Question
-================
+Do not pretend that the answer came from the uploaded documents.
 
+Question:
 {query}
 
-Answer
-======
+Answer:
 """

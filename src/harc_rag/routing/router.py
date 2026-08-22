@@ -5,6 +5,9 @@ from harc_rag.routing.cost import CostEstimator
 
 class AdaptiveRouter:
 
+    # Keep verification context small enough for the verifier.
+    MAX_VERIFICATION_CONTEXT_CHARS = 6000
+
     def __init__(self):
         self.threshold = AdaptiveThreshold()
         self.cost = CostEstimator()
@@ -17,32 +20,18 @@ class AdaptiveRouter:
         context: str = "",
     ):
 
-        threshold = self.threshold.calculate(
-            question
-        )
+        threshold = self.threshold.calculate(question)
 
         if confidence < threshold:
-            cost = self.cost.estimate(
-                answer,
-                context,
-            )
-
-            if cost < 150:
-
-                return RoutingDecision(
-                    should_verify=True,
-                    confidence=confidence,
-                    reason="Low confidence and affordable verification",
-                )
 
             return RoutingDecision(
-                should_verify=False,
+                should_verify=True,
                 confidence=confidence,
-                reason="Low confidence, but verification was skipped because the retrieved context is too large",
+                reason="Low confidence; verification is required",
             )
 
         return RoutingDecision(
             should_verify=False,
             confidence=confidence,
             reason="Sufficient confidence; verification was not required",
-        )       
+        )

@@ -32,6 +32,8 @@ def test_joint_estimator_returns_confidence():
 
     estimator = JointEstimator()
 
+    # Avoid loading the SentenceTransformer model during
+    # this unit test. Evidence confidence is tested separately.
     estimator.evidence.estimate = (
         lambda answer, context: 0.8
     )
@@ -56,6 +58,7 @@ def test_joint_estimator_combines_confidence_scores():
 
     estimator = JointEstimator()
 
+    # Make the three confidence components deterministic.
     estimator.retrieval.estimate = (
         lambda results: 0.8
     )
@@ -73,6 +76,22 @@ def test_joint_estimator_combines_confidence_scores():
         answer="TCP uses a three-way handshake.",
         context="TCP uses a three-way handshake.",
     )
+
+    # Retrieval confidence = 0.8
+    #
+    # DynamicWeightCalculator should therefore use:
+    # retrieval = 0.50
+    # generation = 0.20
+    # evidence = 0.30
+    #
+    # Expected:
+    #
+    # (0.50 * 0.8)
+    # + (0.20 * 0.9)
+    # + (0.30 * 0.7)
+    #
+    # = 0.40 + 0.18 + 0.21
+    # = 0.79
 
     expected = 0.79
 
@@ -100,5 +119,9 @@ def test_joint_estimator_does_not_decide_verification():
         answer="Uncertain answer.",
         context="Some context.",
     )
+
+    # JointEstimator calculates confidence.
+    # AdaptiveRouter is responsible for deciding
+    # whether verification should happen.
 
     assert result.should_verify is False

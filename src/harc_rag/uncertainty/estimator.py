@@ -68,5 +68,5 @@ class JointEstimator:
         return JointUncertainty(
             confidence=confidence,
             score=joint,
-            should_verify=joint < 0.65,
+            should_verify=False,
         )

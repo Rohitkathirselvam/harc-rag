@@ -11,3 +11,5 @@ class VerificationResult:
     is_verified: bool
 
     confidence: float
+
+    reason: str = ""
