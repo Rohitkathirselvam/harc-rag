@@ -99,3 +99,70 @@ ANSWER: I don't have enough information from the provided documents to answer th
         "to answer this question."
     )
     assert result.is_verified is False
+
+
+def test_local_verifier_supports_multiple_claims():
+
+    verifier = LocalVerifier()
+
+    verifier.llm = FakeLLM(
+        """CLAIM: What protocol is described?
+STATUS: SUPPORTED
+REASON: The context describes TCP.
+CLAIM: What handshake does it use?
+STATUS: SUPPORTED
+REASON: The context describes a three-way handshake.
+ANSWER: TCP uses a three-way handshake."""
+    )
+
+    result = verifier.verify(
+        question="What protocol is described and what handshake does it use?",
+        answer="TCP uses a three-way handshake.",
+        context="TCP uses a three-way handshake.",
+    )
+
+    assert result.verdict == "SUPPORTED"
+    assert len(result.claim_results) == 2
+
+
+def test_local_verifier_aggregates_partial_claim_status():
+
+    verifier = LocalVerifier()
+
+    verifier.llm = FakeLLM(
+        """CLAIM: What source materials are discussed?
+STATUS: PARTIALLY_SUPPORTED
+REASON: The context lists novels and films.
+CLAIM: What percentage uses them?
+STATUS: UNSUPPORTED
+REASON: No percentage is provided.
+ANSWER: The context discusses novels and films. The percentage is not provided."""
+    )
+
+    result = verifier.verify(
+        question="What source materials are discussed and what percentage uses them?",
+        answer="The percentage is unavailable.",
+        context="The paper discusses novels and films.",
+    )
+
+    assert result.verdict == "CORRECTED"
+    assert "novels and films" in result.verified_answer
+    assert "percentage is not provided" in result.verified_answer
+
+
+def test_local_verifier_fails_safely_on_malformed_output():
+
+    verifier = LocalVerifier()
+    verifier.llm = FakeLLM("This is not structured verifier output.")
+
+    result = verifier.verify(
+        question="What is the GDP of Japan?",
+        answer="The GDP is unavailable.",
+        context="TCP uses a three-way handshake.",
+    )
+
+    assert result.verdict == "UNSUPPORTED"
+    assert result.verified_answer == (
+        "I don't have enough information from the provided documents "
+        "to answer this question."
+    )

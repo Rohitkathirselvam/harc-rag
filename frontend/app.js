@@ -159,7 +159,7 @@ async function uploadPdf(file) {
   } catch {
     uploadMessageEl.className = "upload-message error";
     uploadMessageEl.textContent =
-      "Cannot connect to HARC-RAG backend. Make sure FastAPI is running on port 8080.";
+      "Cannot connect to HARC-RAG backend. Make sure FastAPI is running on port 8000.";
   }
 }
 
@@ -198,7 +198,7 @@ async function askQuestion(question) {
     loading.remove();
     addMessage(
       "Assistant",
-      "Cannot connect to HARC-RAG backend. Make sure FastAPI is running on port 8080."
+      "Cannot connect to HARC-RAG backend. Make sure FastAPI is running on port 8000."
     );
   }
 }

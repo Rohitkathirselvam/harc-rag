@@ -47,12 +47,13 @@ Follow these rules carefully:
    enough information to support it.
 3. Do NOT use your general knowledge.
 4. Split the question into each requested claim or sub-question.
-5. For every claim, decide only SUPPORTED or UNSUPPORTED based
+5. For every claim, decide SUPPORTED, PARTIALLY_SUPPORTED, or
+    UNSUPPORTED based
    on the retrieved context. Do not use outside knowledge.
 6. Return one block for each claim using exactly:
 
 CLAIM: <requested claim>
-STATUS: SUPPORTED or UNSUPPORTED
+STATUS: SUPPORTED, PARTIALLY_SUPPORTED, or UNSUPPORTED
 REASON: <brief evidence-based reason>
 
 7. After all claim blocks, return:
@@ -62,7 +63,7 @@ ANSWER: <answer using only supported claims>
 8. Include supported claims in ANSWER. If any claim is unsupported,
    explicitly state that the retrieved context does not provide it.
 9. An incomplete but evidence-supported answer must retain its
-   supported claims; Python will classify it as CORRECTED.
+    supported claims; Python will classify it as CORRECTED.
 10. If no claim is supported, ANSWER must be the safe refusal:
 
 I don't have enough information from the provided documents
@@ -72,12 +73,7 @@ to answer this question.
     percentages, relationships, or causal claims.
 12. Do not add explanations outside the retrieved context.
 
-Return EXACTLY this format:
-
-VERDICT: SUPPORTED
-REASON: <short explanation>
-ANSWER: <final answer>
-
+Return only CLAIM, STATUS, REASON blocks followed by ANSWER.
 Python, not the model, determines the aggregate verdict.
 """
 
@@ -105,7 +101,11 @@ Python, not the model, determines the aggregate verdict.
                 current_reason = ""
             elif stripped.startswith("STATUS:") and current_claim is not None:
                 candidate = stripped.split(":", 1)[1].strip().upper()
-                if candidate in {"SUPPORTED", "UNSUPPORTED"}:
+                if candidate in {
+                    "SUPPORTED",
+                    "PARTIALLY_SUPPORTED",
+                    "UNSUPPORTED",
+                }:
                     current_status = candidate
             elif stripped.startswith("REASON:"):
                 current_reason = stripped.split(":", 1)[1].strip()
@@ -130,7 +130,10 @@ Python, not the model, determines the aggregate verdict.
         supported_claims = [
             claim
             for claim in claim_results
-            if claim["status"] == "SUPPORTED"
+            if claim["status"] in {
+                "SUPPORTED",
+                "PARTIALLY_SUPPORTED",
+            }
         ]
         all_claims_supported = bool(claim_results) and len(supported_claims) == len(claim_results)
 

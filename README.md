@@ -151,6 +151,10 @@ python -m http.server 5500
 
 Open `http://127.0.0.1:5500`. The frontend uses `http://127.0.0.1:8000` as its API base URL.
 
+## Live Demo
+
+For a local demonstration, start Ollama, the backend, and the static frontend using the commands above. Open the frontend at `http://127.0.0.1:5500`, upload a PDF, and ask a question. Each assistant response shows the final answer, confidence components, verification status, routing reason, retrieved chunk count, and source text. The backend-mounted alternative is `http://127.0.0.1:8000/app/` when accessing the FastAPI application directly.
+
 ## Upload and Query a PDF
 
 1. Open the frontend.
@@ -237,7 +241,7 @@ Run the complete test suite:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-The final verified test run passed **51 tests**, with 3 deprecation warnings.
+The final verified test run passed **54 tests**, with 3 deprecation warnings.
 
 Run the complete evaluation:
 

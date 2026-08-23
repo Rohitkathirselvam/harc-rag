@@ -15,12 +15,19 @@ data/uploads/
 # Environment files
 .env
 .env.*
+!.env.example
 
 # VS Code
 .vscode/
 # Runtime data
 logs/
 memory.db
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
 
 # Generated evaluation output
 tests/evaluation/results.json
