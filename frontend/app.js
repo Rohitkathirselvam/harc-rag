@@ -78,7 +78,14 @@ function addAssistantResponse(data) {
   const article = addMessage("Assistant", data.answer);
   const metadata = document.createElement("div");
   metadata.className = "metadata";
-  metadata.innerHTML = `
+  const answerMode = String(data.answer_mode || "DOCUMENT").toUpperCase();
+  const modeLabel = answerMode === "GENERAL" ? "GENERAL KNOWLEDGE" : "DOCUMENT";
+  let metadataHtml = `
+    <div class="metric"><span>Answer mode</span>${modeLabel}</div>
+  `;
+
+  if (answerMode === "DOCUMENT") {
+    metadataHtml += `
     <div class="metric"><span>Confidence</span>${formatNumber(data.confidence)}</div>
     <div class="metric"><span>Retrieval</span>${formatNumber(data.retrieval_confidence)}</div>
     <div class="metric"><span>Generation</span>${formatNumber(data.generation_confidence)}</div>
@@ -86,9 +93,11 @@ function addAssistantResponse(data) {
     <div class="metric"><span>Verification status</span>${verificationLabel(data)}</div>
     <div class="metric"><span>Retrieved chunks</span>${data.retrieved_chunks ?? "Not available"}</div>
   `;
+  }
+  metadata.innerHTML = metadataHtml;
   article.appendChild(metadata);
 
-  if (data.verification_reason) {
+  if (answerMode === "DOCUMENT" && data.verification_reason) {
     const reason = document.createElement("div");
     reason.className = "source";
     reason.innerHTML = `
@@ -98,7 +107,7 @@ function addAssistantResponse(data) {
     article.appendChild(reason);
   }
 
-  if (Array.isArray(data.sources) && data.sources.length > 0) {
+  if (answerMode === "DOCUMENT" && Array.isArray(data.sources) && data.sources.length > 0) {
     const sources = document.createElement("section");
     sources.className = "sources";
     sources.innerHTML = `<div class="role">Sources</div>`;

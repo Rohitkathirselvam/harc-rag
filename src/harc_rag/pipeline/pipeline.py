@@ -1,6 +1,6 @@
 from dataclasses import dataclass
+from enum import Enum
 from os import getenv
-from typing import Any
 
 from harc_rag.generation.generator import RAGGenerator
 from harc_rag.generation.interfaces import LLM
@@ -12,6 +12,11 @@ from harc_rag.routing.router import AdaptiveRouter
 from harc_rag.uncertainty.estimator import JointEstimator
 from harc_rag.verification.verifier import LocalVerifier
 from harc_rag.memory.context_builder import ContextBuilder
+
+
+class AnswerMode(str, Enum):
+    DOCUMENT = "DOCUMENT"
+    GENERAL = "GENERAL"
 
 
 # ============================================================
@@ -39,9 +44,10 @@ class PipelineAnswer:
     evidence_confidence: float | None
     verified: bool | None
     verification_reason: str | None
-    verification_verdict: str
+    verification_verdict: str | None
     retrieved_chunks: int
     sources: list[PipelineSource]
+    answer_mode: AnswerMode
 
 
 # ============================================================
@@ -141,6 +147,16 @@ class HARCRAGPipeline:
         question: str,
         conversation_context: str = "",
     ) -> PipelineAnswer:
+
+        # Document answers never switch modes after retrieval or verification.
+        # `_needs_general_fallback` is therefore deliberately not used here.
+        answer_mode = self._select_answer_mode(question)
+
+        if answer_mode is AnswerMode.GENERAL:
+            return self._answer_from_general_knowledge(
+                question,
+                conversation_context,
+            )
 
         # 1. Retrieve relevant chunks
         retrieval_results = self.retriever.retrieve(
@@ -254,7 +270,138 @@ class HARCRAGPipeline:
                 retrieval_results
             ),
             sources=sources,
+            answer_mode=AnswerMode.DOCUMENT,
         )
+
+    def _answer_from_general_knowledge(
+        self,
+        question: str,
+        conversation_context: str,
+    ) -> PipelineAnswer:
+        """Generate an explicitly uncited general-knowledge answer."""
+
+        prompt = self.prompt_builder.build_general(
+            query=question,
+            conversation_context=conversation_context,
+        )
+        answer = self.generator.generate(prompt)
+
+        return PipelineAnswer(
+            answer=answer,
+            original_answer=answer,
+            confidence=None,
+            retrieval_confidence=None,
+            generation_confidence=None,
+            evidence_confidence=None,
+            verified=None,
+            verification_reason=None,
+            verification_verdict=None,
+            retrieved_chunks=0,
+            sources=[],
+            answer_mode=AnswerMode.GENERAL,
+        )
+
+    def _select_answer_mode(self, question: str) -> AnswerMode:
+        """Choose GENERAL only for clearly standalone, non-document questions."""
+
+        normalized = " ".join(question.lower().split())
+
+        if normalized.startswith("what is "):
+            subject = question.strip()[len("what is "):].strip(" ?!.")
+            if subject.isupper() and subject.replace("-", "").isalpha():
+                return AnswerMode.DOCUMENT
+
+        if normalized.startswith(("how does ", "how do ")):
+            subject = question.strip().split()[2].strip(" ?!.,")
+            if subject.isupper() and subject.isalpha():
+                return AnswerMode.DOCUMENT
+
+        document_markers = (
+            "according to",
+            "uploaded",
+            "document",
+            "documents",
+            "paper",
+            "pdf",
+            "file",
+            "files",
+            "retrieved context",
+            "provided context",
+            "the context",
+            "the text",
+            "the article",
+            "the report",
+            "the chapter",
+            "the passage",
+            "the author",
+            "the conclusion",
+            "the findings",
+            "the main aim",
+            "the main objective",
+            "does this",
+            "say about",
+        )
+
+        if any(marker in normalized for marker in document_markers):
+            return AnswerMode.DOCUMENT
+
+        ambiguous_markers = (
+            " what is it",
+            " what are they",
+            " what does it",
+            " what does this",
+            " explain it",
+            " explain this",
+            " main ",
+            " key ",
+            " finding ",
+            " findings ",
+            " conclusion ",
+            " aim ",
+            " objective ",
+            " methodology ",
+            " practice ",
+            " practices ",
+            " study ",
+            " research ",
+            " result ",
+            " results ",
+            " purpose ",
+            " that ",
+            " these ",
+            " those ",
+        )
+
+        padded_question = f" {normalized} "
+        if (
+            len(normalized.split()) <= 2
+            or any(marker in padded_question for marker in ambiguous_markers)
+        ):
+            return AnswerMode.DOCUMENT
+
+        general_prefixes = (
+            "what is ",
+            "what are ",
+            "who is ",
+            "who are ",
+            "where is ",
+            "where are ",
+            "when is ",
+            "when was ",
+            "why is ",
+            "why are ",
+            "how does ",
+            "how do ",
+            "explain ",
+            "define ",
+            "compare ",
+            "what is the difference between ",
+        )
+
+        if normalized.startswith(general_prefixes):
+            return AnswerMode.GENERAL
+
+        return AnswerMode.DOCUMENT
 
     def _build_sources(
         self,
@@ -312,11 +459,10 @@ class HARCRAGPipeline:
         answer: str,
     ) -> bool:
         """
-        Detect whether the RAG-generated answer indicates
-        that the retrieved context is insufficient.
+        Legacy utility for detecting an insufficient RAG answer.
 
-        Returns True when a second LLM call should be made
-        using the general-knowledge prompt.
+        It must not be used to change a DOCUMENT answer into a GENERAL
+        answer: document-related questions always remain evidence-only.
         """
 
         # Empty answer

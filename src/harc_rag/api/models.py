@@ -42,3 +42,5 @@ class ChatResponse(BaseModel):
     retrieved_chunks: int | None = None
 
     sources: list[SourceChunk] = []
+
+    answer_mode: str = "DOCUMENT"

@@ -171,6 +171,7 @@ def chat(
         verification_reason=result.verification_reason,
         verification_verdict=result.verification_verdict,
         retrieved_chunks=result.retrieved_chunks,
+        answer_mode=result.answer_mode.value,
         sources=[
             SourceChunk(
                 source=source.source,
