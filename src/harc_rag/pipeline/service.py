@@ -15,8 +15,21 @@ class PipelineService:
     def ask(
         self,
         question: str,
+        conversation_context: str = "",
     ) -> str:
 
         return self.pipeline.answer(
-            question
+            question,
+            conversation_context=conversation_context,
+        )
+
+    def ask_with_metadata(
+        self,
+        question: str,
+        conversation_context: str = "",
+    ):
+
+        return self.pipeline.answer_with_metadata(
+            question,
+            conversation_context=conversation_context,
         )

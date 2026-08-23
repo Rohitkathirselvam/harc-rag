@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://127.0.0.1:8080";
+const API_BASE_URL = "http://127.0.0.1:8000";
 
 const statusEl = document.querySelector("#backend-status");
 const uploadEl = document.querySelector("#pdf-upload");
@@ -9,6 +9,8 @@ const formEl = document.querySelector("#chat-form");
 const inputEl = document.querySelector("#question-input");
 const newChatEl = document.querySelector("#new-chat");
 
+let conversationId = crypto.randomUUID();
+
 const documents = [];
 
 function formatNumber(value) {
@@ -16,12 +18,22 @@ function formatNumber(value) {
 }
 
 function verificationLabel(data) {
-  if (data.verified) {
-    return "Verified";
+  const verdict = String(data.verification_verdict || "").toUpperCase();
+
+  if (verdict === "NOT_REQUIRED") {
+    return "Not required";
   }
 
-  if (typeof data.confidence === "number" && data.confidence < 0.65) {
-    return "Skipped";
+  if (verdict === "SUPPORTED" || data.verified) {
+    return "Triggered → Supported";
+  }
+
+  if (verdict === "CORRECTED") {
+    return "Triggered → Corrected";
+  }
+
+  if (verdict === "UNSUPPORTED") {
+    return "Triggered → Unsupported";
   }
 
   return "Not required";
@@ -71,7 +83,7 @@ function addAssistantResponse(data) {
     <div class="metric"><span>Retrieval</span>${formatNumber(data.retrieval_confidence)}</div>
     <div class="metric"><span>Generation</span>${formatNumber(data.generation_confidence)}</div>
     <div class="metric"><span>Evidence</span>${formatNumber(data.evidence_confidence)}</div>
-    <div class="metric"><span>Verification</span>${verificationLabel(data)}</div>
+    <div class="metric"><span>Verification status</span>${verificationLabel(data)}</div>
     <div class="metric"><span>Retrieved chunks</span>${data.retrieved_chunks ?? "Not available"}</div>
   `;
   article.appendChild(metadata);
@@ -79,7 +91,10 @@ function addAssistantResponse(data) {
   if (data.verification_reason) {
     const reason = document.createElement("div");
     reason.className = "source";
-    reason.innerHTML = `<div class="source-title">Routing decision</div>${escapeHtml(data.verification_reason)}`;
+    reason.innerHTML = `
+      <div class="source-title">Routing / verification reason</div>
+      ${escapeHtml(data.verification_reason)}
+    `;
     article.appendChild(reason);
   }
 
@@ -165,7 +180,10 @@ async function askQuestion(question) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({
+        question,
+        conversation_id: conversationId,
+      }),
     });
 
     loading.remove();
@@ -212,6 +230,8 @@ formEl.addEventListener("submit", (event) => {
 });
 
 newChatEl.addEventListener("click", () => {
+  conversationId = crypto.randomUUID();
+
   messagesEl.innerHTML = `
     <article class="empty-state">
       <h3>Ask a question after indexing a PDF.</h3>

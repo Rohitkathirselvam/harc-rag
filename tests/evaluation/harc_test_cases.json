@@ -1,0 +1,102 @@
+[
+	{
+		"question": "What new sub-field does the paper propose within Development Studies?",
+		"category": "supported",
+		"expected": "SUPPORTED"
+	},
+	{
+		"question": "What is the main aim of Development Humanities according to the paper?",
+		"category": "supported",
+		"expected": "SUPPORTED"
+	},
+	{
+		"question": "Which kinds of source materials does the proposed Development Humanities approach use?",
+		"category": "supported",
+		"expected": "SUPPORTED"
+	},
+	{
+		"question": "Which analytical practices from the humanities does the paper identify as useful to Development Studies?",
+		"category": "supported",
+		"expected": "SUPPORTED"
+	},
+	{
+		"question": "What dimensions did Development Studies expand beyond its early focus on economic growth, industrialization and poverty?",
+		"category": "supported",
+		"expected": "SUPPORTED"
+	},
+	{
+		"question": "What debate did C. P. Snow initiate during the 1950s?",
+		"category": "supported",
+		"expected": "SUPPORTED"
+	},
+	{
+		"question": "What does Said's concept of orientalism help Development Studies understand?",
+		"category": "supported",
+		"expected": "SUPPORTED"
+	},
+	{
+		"question": "How can community arts contribute to reconciliation in post-conflict settings according to the paper?",
+		"category": "supported",
+		"expected": "SUPPORTED"
+	},
+	{
+		"question": "What is the purpose of using novels alongside conventional academic texts in the teaching example discussed by Harriss?",
+		"category": "supported",
+		"expected": "SUPPORTED"
+	},
+	{
+		"question": "What risks of establishing Development Humanities as a sub-field does the conclusion identify?",
+		"category": "supported",
+		"expected": "SUPPORTED"
+	},
+	{
+		"question": "How does the paper define the relationship between Development Humanities and environmental humanities?",
+		"category": "partially_supported",
+		"expected": "CORRECTED"
+	},
+	{
+		"question": "Which country benefited most from the use of community arts in the Changing the Story project, and by how much did reconciliation improve?",
+		"category": "partially_supported",
+		"expected": "CORRECTED"
+	},
+	{
+		"question": "What exact percentage of Development Studies research uses novels, films, poetry, art and music?",
+		"category": "partially_supported",
+		"expected": "CORRECTED"
+	},
+	{
+		"question": "Does the paper prove that Development Humanities produces better policy outcomes than economics, and what was the size of the effect?",
+		"category": "partially_supported",
+		"expected": "CORRECTED"
+	},
+	{
+		"question": "What university funding programme does the author recommend for creating Development Humanities departments?",
+		"category": "partially_supported",
+		"expected": "CORRECTED"
+	},
+	{
+		"question": "What is the GDP of Japan in 2026?",
+		"category": "unsupported",
+		"expected": "UNSUPPORTED"
+	},
+	{
+		"question": "Who won the FIFA World Cup in 2022?",
+		"category": "unsupported",
+		"expected": "UNSUPPORTED"
+	},
+	{
+		"question": "What is the chemical formula of water?",
+		"category": "unsupported",
+		"expected": "UNSUPPORTED"
+	},
+	{
+		"question": "What will the weather be in London tomorrow?",
+		"category": "unsupported",
+		"expected": "UNSUPPORTED"
+	},
+	{
+		"question": "How many moons does Mars have?",
+		"category": "unsupported",
+		"expected": "UNSUPPORTED"
+	}
+]

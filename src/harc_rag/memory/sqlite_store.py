@@ -9,7 +9,10 @@ class SQLiteMemoryStore(MemoryStore):
 
     def __init__(self, database: str = "memory.db"):
 
-        self.connection = sqlite3.connect(database)
+        self.connection = sqlite3.connect(
+            database,
+            check_same_thread=False,
+        )
 
         self.create_tables()
 

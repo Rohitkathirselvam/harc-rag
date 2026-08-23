@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from dataclasses import field
 
 
 @dataclass
@@ -13,3 +14,9 @@ class VerificationResult:
     confidence: float
 
     reason: str = ""
+
+    verdict: str = "UNSUPPORTED"
+
+    claim_results: list[dict[str, str]] = field(
+        default_factory=list
+    )

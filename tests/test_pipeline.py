@@ -53,7 +53,7 @@ class FakeLLM:
         return "LLM stands for large language model."
 
 
-def test_pipeline_falls_back_to_general_llm_when_context_is_insufficient():
+def test_pipeline_keeps_rag_answer_when_context_is_insufficient():
 
     llm = FakeLLM()
 
@@ -64,10 +64,16 @@ def test_pipeline_falls_back_to_general_llm_when_context_is_insufficient():
 
     result = pipeline.answer_with_metadata("What is LLM?")
 
-    assert result.answer == "LLM stands for large language model."
-    assert len(llm.prompts) == 2
-    assert "general knowledge" in llm.prompts[1]
-    assert "general knowledge" in result.verification_reason
+    assert result.answer == (
+        "I don't have enough information from the provided "
+        "documents to answer this question."
+    )
+    assert result.original_answer == (
+        "I don't have enough information from the provided documents."
+    )
+    assert result.verification_verdict == "UNSUPPORTED"
+    assert len(llm.prompts) == 1
+    assert "general knowledge" not in result.verification_reason
 
 
 class LowConfidenceRetriever:

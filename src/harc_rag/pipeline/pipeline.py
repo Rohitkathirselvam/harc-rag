@@ -11,6 +11,7 @@ from harc_rag.generation.prompt_builder import PromptBuilder
 from harc_rag.routing.router import AdaptiveRouter
 from harc_rag.uncertainty.estimator import JointEstimator
 from harc_rag.verification.verifier import LocalVerifier
+from harc_rag.memory.context_builder import ContextBuilder
 
 
 # ============================================================
@@ -31,12 +32,14 @@ class PipelineSource:
 @dataclass
 class PipelineAnswer:
     answer: str
+    original_answer: str
     confidence: float | None
     retrieval_confidence: float | None
     generation_confidence: float | None
     evidence_confidence: float | None
     verified: bool | None
     verification_reason: str | None
+    verification_verdict: str
     retrieved_chunks: int
     sources: list[PipelineSource]
 
@@ -60,6 +63,7 @@ class HARCRAGPipeline:
 
         # Prompt builder
         self.prompt_builder = PromptBuilder()
+        self.context_builder = ContextBuilder()
 
         # ----------------------------------------------------
         # LLM
@@ -118,9 +122,13 @@ class HARCRAGPipeline:
     def answer(
         self,
         question: str,
+        conversation_context: str = "",
     ) -> str:
 
-        result = self.answer_with_metadata(question)
+        result = self.answer_with_metadata(
+            question,
+            conversation_context,
+        )
 
         return result.answer
 
@@ -131,6 +139,7 @@ class HARCRAGPipeline:
     def answer_with_metadata(
         self,
         question: str,
+        conversation_context: str = "",
     ) -> PipelineAnswer:
 
         # 1. Retrieve relevant chunks
@@ -153,6 +162,7 @@ class HARCRAGPipeline:
         prompt = self.prompt_builder.build(
             query=question,
             chunks=chunks,
+            conversation_context=conversation_context,
         )
 
         # 4. Generate RAG answer
@@ -160,36 +170,18 @@ class HARCRAGPipeline:
             prompt
         )
 
-        # 5. Check whether fallback is required
-        used_general_fallback = (
-            not retrieval_results
-            or not context.strip()
-            or self._needs_general_fallback(answer)
-        )
-
-        # 6. General LLM fallback
-        if used_general_fallback:
-
-            fallback_prompt = (
-                self.prompt_builder.build_general(
-                    query=question
-                )
-            )
-
-            # Replace the original RAG answer
-            # with the general LLM answer.
-            answer = self.generator.generate(
-                fallback_prompt
-            )
-
-        # 7. Estimate uncertainty
+        # 5. Estimate uncertainty
+        #
+        # IMPORTANT:
+        # Confidence must be calculated BEFORE any routing decision.
+        # Low-confidence answers must go through verification.
         uncertainty = self.estimator.estimate(
             retrieval_results,
             answer,
             context,
         )
 
-        # 8. Adaptive routing
+        # 6. Adaptive routing
         decision = self.router.route(
             confidence=uncertainty.score,
             question=question,
@@ -197,49 +189,43 @@ class HARCRAGPipeline:
             context=context,
         )
 
-        # 9. Default values
+        # 7. Default values
         final_answer = answer
         verified = False
         verification_reason = decision.reason
+        verification_verdict = "NOT_REQUIRED"
 
-        # 10. If fallback was used,
-        # don't run the local verifier.
-        if used_general_fallback:
+        # 8. LOW-CONFIDENCE / VERIFICATION PATH
+        if decision.should_verify:
 
-            final_answer = answer
-
-            verified = False
-
-            verification_reason = (
-                "The uploaded documents did not contain enough "
-                "information, so the answer was generated from "
-                "the LLM's general knowledge."
-            )
-
-        # 11. Normal RAG verification
-        elif decision.should_verify:
-
-            # Use a smaller evidence context for verification.
-            # This prevents the verifier from receiving an unnecessarily
-            # large retrieved context.
             verification_context = "\n\n".join(
                 result.chunk.text
                 for result in retrieval_results[:3]
             )
 
             verification = self.verifier.verify(
-                question,
-                answer,
-                verification_context,
+                question=question,
+                answer=answer,
+                context=verification_context,
             )
 
             final_answer = verification.verified_answer
             verified = verification.is_verified
+            verification_verdict = verification.verdict
 
-            verification_reason = getattr(
-                verification,
-                "reason",
-                verification_reason,
+            verification_reason = (
+                verification.reason
+                or decision.reason
+            )
+
+        # 9. HIGH-CONFIDENCE PATH
+        else:
+
+            final_answer = answer
+            verified = False
+
+            verification_reason = (
+                "Sufficient confidence; verification was not required"
             )
 
         # 12. Build sources
@@ -250,6 +236,7 @@ class HARCRAGPipeline:
         # 13. Return result
         return PipelineAnswer(
             answer=final_answer,
+            original_answer=answer,
             confidence=uncertainty.score,
             retrieval_confidence=(
                 uncertainty.confidence.retrieval
@@ -262,6 +249,7 @@ class HARCRAGPipeline:
             ),
             verified=verified,
             verification_reason=verification_reason,
+            verification_verdict=verification_verdict,
             retrieved_chunks=len(
                 retrieval_results
             ),

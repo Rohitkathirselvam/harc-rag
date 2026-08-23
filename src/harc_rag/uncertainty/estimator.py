@@ -59,6 +59,10 @@ class JointEstimator:
             + weights.evidence * evidence
         )
 
+        # Weak evidence must force low confidence.
+        if evidence < 0.65:
+            joint = min(joint, evidence)
+
         confidence = ConfidenceScore(
             retrieval=retrieval,
             generation=generation,

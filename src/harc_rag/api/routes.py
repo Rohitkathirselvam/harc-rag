@@ -12,6 +12,8 @@ from harc_rag.api.models import (
     ChatResponse,
     SourceChunk,
 )
+from harc_rag.memory.manager import MemoryManager
+from harc_rag.memory.context_builder import ContextBuilder
 
 
 router = APIRouter()
@@ -20,6 +22,9 @@ router = APIRouter()
 _pipeline = None
 
 _indexer = None
+
+_memory_manager = MemoryManager()
+_context_builder = ContextBuilder()
 
 
 UPLOAD_DIR = Path(
@@ -69,21 +74,102 @@ def chat(
             detail="HARC-RAG pipeline is not initialized",
         )
 
-    if not hasattr(_pipeline, "answer_with_metadata"):
-        return ChatResponse(
-            answer=_pipeline.answer(request.question)
+    # ---------------------------------------
+    # CREATE / LOAD CONVERSATION
+    # ---------------------------------------
+
+    conversation_id = request.conversation_id
+
+    if not conversation_id:
+
+        import uuid
+
+        conversation_id = str(uuid.uuid4())
+
+        conversation = _memory_manager.create(
+            conversation_id
         )
 
-    result = _pipeline.answer_with_metadata(request.question)
+    else:
+
+        conversation = _memory_manager.get(
+            conversation_id
+        )
+
+    # ---------------------------------------
+    # BUILD CONVERSATION CONTEXT
+    # ---------------------------------------
+
+    conversation_context = _context_builder.build(
+        conversation
+    )
+
+    # ---------------------------------------
+    # SAVE USER MESSAGE
+    # ---------------------------------------
+
+    _memory_manager.add_message(
+        conversation_id,
+        "user",
+        request.question,
+    )
+
+    # ---------------------------------------
+    # RUN HARC-RAG
+    # ---------------------------------------
+
+    if hasattr(
+        _pipeline,
+        "answer_with_metadata"
+    ):
+
+        result = _pipeline.answer_with_metadata(
+            request.question,
+            conversation_context=conversation_context,
+        )
+
+        answer = result.answer
+
+    else:
+
+        answer = _pipeline.answer(
+            request.question
+        )
+
+        result = None
+
+    # ---------------------------------------
+    # SAVE ASSISTANT MESSAGE
+    # ---------------------------------------
+
+    _memory_manager.add_message(
+        conversation_id,
+        "assistant",
+        answer,
+    )
+
+    # ---------------------------------------
+    # RESPONSE
+    # ---------------------------------------
+
+    if result is None:
+
+        return ChatResponse(
+            answer=answer,
+            conversation_id=conversation_id,
+        )
 
     return ChatResponse(
         answer=result.answer,
+        original_answer=result.original_answer,
+        conversation_id=conversation_id,
         confidence=result.confidence,
         retrieval_confidence=result.retrieval_confidence,
         generation_confidence=result.generation_confidence,
         evidence_confidence=result.evidence_confidence,
         verified=result.verified,
         verification_reason=result.verification_reason,
+        verification_verdict=result.verification_verdict,
         retrieved_chunks=result.retrieved_chunks,
         sources=[
             SourceChunk(

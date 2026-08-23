@@ -18,3 +18,9 @@ data/uploads/
 
 # VS Code
 .vscode/
+# Runtime data
+logs/
+memory.db
+
+# Generated evaluation output
+tests/evaluation/results.json

@@ -37,8 +37,20 @@ I don't have enough information from the provided documents.
             for chunk in chunks
         )
 
+        conversation_section = ""
+
+        if conversation_context.strip():
+            conversation_section = f"""
+Conversation History
+===================
+
+{conversation_context}
+"""
+
         return f"""
 {self.SYSTEM_PROMPT}
+
+{conversation_section}
 
 Retrieved Context
 =================
