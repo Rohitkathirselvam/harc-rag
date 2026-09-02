@@ -64,8 +64,10 @@ class HARCRAGPipeline:
         self,
         retriever,
         llm: LLM | None = None,
+        debug: bool = True,
     ):
         self.retriever = retriever
+        self.debug = debug
 
         # Prompt builder
         self.prompt_builder = PromptBuilder()
@@ -205,6 +207,12 @@ class HARCRAGPipeline:
             context=context,
         )
 
+        if self.debug:
+            self._print_demonstration_output(
+                uncertainty=uncertainty,
+                decision=decision,
+            )
+
         # 7. Default values
         final_answer = answer
         verified = False
@@ -272,6 +280,114 @@ class HARCRAGPipeline:
             sources=sources,
             answer_mode=AnswerMode.DOCUMENT,
         )
+
+    def _print_demonstration_output(
+        self,
+        uncertainty,
+        decision,
+    ) -> None:
+        """Print values already calculated by the document RAG pipeline."""
+
+        dense_results = getattr(
+            self.retriever,
+            "last_dense_results",
+            [],
+        )
+        bm25_results = getattr(
+            self.retriever,
+            "last_bm25_results",
+            [],
+        )
+        fused_results = getattr(
+            self.retriever,
+            "last_fused_results",
+            [],
+        )
+        weights = self.estimator.last_weights
+        threshold = self.router.last_threshold
+
+        lines = [
+            "=" * 60,
+            "                 RETRIEVAL RESULTS",
+            "=" * 60,
+            "",
+            "--- FAISS / SEMANTIC RANKING ---",
+            "",
+        ]
+        lines.extend(
+            f"Rank {rank} | Chunk: {chunk_id} | L2 Distance: {score}"
+            for rank, (chunk_id, score) in enumerate(
+                dense_results,
+                start=1,
+            )
+        )
+        lines.extend([
+            "",
+            "--- BM25 / LEXICAL RANKING ---",
+            "",
+        ])
+        lines.extend(
+            f"Rank {rank} | Chunk: {chunk_id} | BM25 Score: {score}"
+            for rank, (chunk_id, score) in enumerate(
+                bm25_results,
+                start=1,
+            )
+        )
+        lines.extend([
+            "",
+            "--- RRF FINAL RANKING ---",
+            "",
+        ])
+        lines.extend(
+            f"Final Rank {rank} | Chunk: {chunk_id} | RRF Score: {score}"
+            for rank, (chunk_id, score) in enumerate(
+                fused_results,
+                start=1,
+            )
+        )
+        lines.extend([
+            "",
+            "=" * 60,
+            "",
+            "--- CONFIDENCE ESTIMATION ---",
+            "",
+            (
+                "Retrieval Confidence : "
+                f"{uncertainty.confidence.retrieval}"
+            ),
+            (
+                "Generation Confidence: "
+                f"{uncertainty.confidence.generation}"
+            ),
+            (
+                "Evidence Confidence  : "
+                f"{uncertainty.confidence.evidence}"
+            ),
+            "",
+            "--- DYNAMIC WEIGHTS ---",
+            "",
+            f"Retrieval Weight : {weights.retrieval}",
+            f"Generation Weight: {weights.generation}",
+            f"Evidence Weight  : {weights.evidence}",
+            "",
+            f"Joint Confidence     : {uncertainty.score}",
+            "",
+            "=" * 60,
+            "",
+            "--- ADAPTIVE ROUTING ---",
+            "",
+            f"Joint Confidence : {decision.confidence}",
+            f"Threshold        : {threshold}",
+            (
+                "Verification     : REQUIRED"
+                if decision.should_verify
+                else "Verification     : NOT REQUIRED"
+            ),
+            "",
+            "=" * 60,
+        ])
+
+        print("\n".join(lines))
 
     def _answer_from_general_knowledge(
         self,

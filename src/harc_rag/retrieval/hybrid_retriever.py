@@ -18,6 +18,12 @@ class HybridRetriever(Retriever):
 
         self.fusion = ReciprocalRankFusion()
 
+        # Preserve the raw scores for demonstration output before RRF replaces
+        # RetrievalResult scores with fused scores.
+        self.last_dense_results = []
+        self.last_bm25_results = []
+        self.last_fused_results = []
+
     def retrieve(
         self,
         query: str,
@@ -28,7 +34,23 @@ class HybridRetriever(Retriever):
 
         bm25 = self.bm25_retriever.retrieve(query, k)
 
-        return self.fusion.fuse(
+        self.last_dense_results = [
+            (result.chunk.chunk_id, result.score)
+            for result in dense
+        ]
+        self.last_bm25_results = [
+            (result.chunk.chunk_id, result.score)
+            for result in bm25
+        ]
+
+        fused = self.fusion.fuse(
             dense,
             bm25,
         )[:k]
+
+        self.last_fused_results = [
+            (result.chunk.chunk_id, result.score)
+            for result in fused
+        ]
+
+        return fused

@@ -28,6 +28,7 @@ class JointEstimator:
         self.generation = GenerationConfidenceEstimator()
         self.evidence = EvidenceConfidenceEstimator()
         self.weights = DynamicWeightCalculator()
+        self.last_weights = None
 
     def estimate(
         self,
@@ -52,6 +53,7 @@ class JointEstimator:
         weights = self.weights.calculate(
             retrieval
         )
+        self.last_weights = weights
 
         joint = (
             weights.retrieval * retrieval

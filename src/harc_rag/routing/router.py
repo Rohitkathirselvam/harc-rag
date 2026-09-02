@@ -11,6 +11,7 @@ class AdaptiveRouter:
     def __init__(self):
         self.threshold = AdaptiveThreshold()
         self.cost = CostEstimator()
+        self.last_threshold = None
 
     def route(
         self,
@@ -21,6 +22,7 @@ class AdaptiveRouter:
     ):
 
         threshold = self.threshold.calculate(question)
+        self.last_threshold = threshold
 
         if confidence < threshold:
 
